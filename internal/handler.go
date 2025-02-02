@@ -1,14 +1,14 @@
 package internal
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 type Handler struct {
-	Database *Database
+	Storage MetricStorage
 }
 
 func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
@@ -20,7 +20,6 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
 	metricType := mux.Vars(req)["metric_type"]
 	metricName := mux.Vars(req)["metric_name"]
 	metricValue := mux.Vars(req)["metric_value"]
-	fmt.Printf("Received params from URL : type = %s, name = %s, value = %s\n", metricType, metricName, metricValue)
 	if metricName == "" {
 		http.Error(w, "Metric not found", http.StatusNotFound)
 		return
@@ -30,20 +29,24 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if !IsValidMetricType(metricType) {
-		http.Error(w, fmt.Sprintf("Metric type is invalid, possible types are: %s", GetAllMetricTypesStr()), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Metric type is invalid, possible types are: %s, provided type is: %s", GetAllMetricTypesStr(), metricType), http.StatusBadRequest)
+		return
+	}
+	convertedMetricValue, err := strconv.ParseFloat(metricValue, 64)
+	if err != nil {
+		http.Error(w, "Metric value is not a valid float", http.StatusBadRequest)
 		return
 	}
 
 	if metricType == Gauge {
-		err := ReplaceValue(h.Database.DB, metricType, metricName, metricValue)
+		err := h.replaceValue(metricType, metricName, convertedMetricValue)
 		if err != nil {
 			http.Error(w, "Error occurred during updating metric "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Write([]byte("Successfully updated metric " + metricName))
-	}
-	if metricType == Counter {
-		err := AddValue(h.Database.DB, metricType, metricName, metricValue)
+	} else if metricType == Counter {
+		err := h.addValue(metricType, metricName, convertedMetricValue)
 		if err != nil {
 			http.Error(w, "Error occurred during inserting metric "+err.Error(), http.StatusInternalServerError)
 			return
@@ -52,58 +55,34 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func AddValue(db *sql.DB, metricType, name, value string) error {
-	query := fmt.Sprintf("SELECT max(id) FROM %s", TableNames[metricType])
-	var maxID int
-	err := db.QueryRow(query).Scan(&maxID)
+func (h *Handler) addValue(metricType, name string, value float64) error {
+	maxID, err := h.Storage.GetMaxID(metricType)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf("INSERT INTO %s VALUES ($1, $2, $3)", TableNames[metricType])
-	_, err = db.Exec(query, maxID+1, name, value)
+	err = h.Storage.InsertMetric(metricType, name, value, maxID+1)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func ReplaceValue(db *sql.DB, metricType, name, value string) error {
-	query := fmt.Sprintf("SELECT max(id) FROM %s", TableNames[metricType])
-	var maxID int
-	err := db.QueryRow(query).Scan(&maxID)
+func (h *Handler) replaceValue(metricType, name string, value float64) error {
+	maxID, err := h.Storage.GetMaxID(metricType)
 	if err != nil {
 		return err
 	}
 
-	query = fmt.Sprintf("SELECT * FROM %s WHERE name = $1", TableNames[metricType])
-	rows, err := db.Query(query, name)
+	existingMetricID, err := h.Storage.GetMetricIDByName(metricType, name)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var id int
-		var metricName string
-		var metricValue string
-		if err := rows.Scan(&id, &metricName, &metricValue); err != nil {
-			return err
-		}
-		fmt.Println("ID:", id, "Name:", metricName, "Value:", metricValue)
-
-		query = fmt.Sprintf("UPDATE %s SET value = $1 WHERE id = $2", TableNames[metricType])
-		_, err := db.Exec(query, value, id)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	query = fmt.Sprintf("INSERT INTO %s VALUES ($1, $2, $3)", TableNames[metricType])
-	_, err = db.Exec(query, maxID+1, name, value)
-	if err != nil {
-		return err
+	if existingMetricID == 0 {
+		h.Storage.InsertMetric(metricType, name, value, maxID+1)
+	} else {
+		h.Storage.UpdateMetricByID(metricType, value, maxID)
 	}
 	return nil
 }

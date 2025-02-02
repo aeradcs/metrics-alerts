@@ -23,9 +23,9 @@ func main() {
 	}
 
 	// db & server
-	db := internal.NewDatabase()
+	db := internal.NewSQLMetricStorage()
 	defer db.Close()
-	handler := internal.Handler{Database: db}
+	handler := internal.Handler{Storage: db}
 	router := mux.NewRouter()
 	router.HandleFunc(`/update/{metric_type}/{metric_name}/{metric_value}`, handler.UpdateMetric)
 
