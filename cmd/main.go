@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -10,7 +9,6 @@ import (
 	"metrics-alerts/config"
 	"metrics-alerts/internal"
 	"net/http"
-	"os"
 )
 
 func main() {
@@ -21,24 +19,16 @@ func main() {
 	// env
 	err := godotenv.Load(".env")
 	if err != nil {
-		panic(err)
+		fmt.Println("Error loading .env", err)
 	}
 
-	// db
-	connStr := os.Getenv("DB_CONN_STR")
-	if connStr == "" {
-		panic("DB_CONN_STR environment variable is not set")
-	}
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	// db & server
+	db := internal.NewDatabase()
 	defer db.Close()
-
-	// server
+	handler := internal.Handler{Database: db}
 	router := mux.NewRouter()
-	router.HandleFunc(`/`, internal.PostMetric)
-	router.HandleFunc(`/{name}`, internal.GetMetric)
+	router.HandleFunc(`/`, handler.PostMetric)
+	router.HandleFunc(`/{name}`, handler.GetMetric)
 
 	fmt.Printf("Server is running on :%s\n", *config.Port)
 	if err := http.ListenAndServe(":"+*config.Port, router); err != nil {
