@@ -27,10 +27,9 @@ func main() {
 	defer db.Close()
 	handler := internal.Handler{Database: db}
 	router := mux.NewRouter()
-	router.HandleFunc(`/`, handler.PostMetric)
-	router.HandleFunc(`/{name}`, handler.GetMetric)
+	router.HandleFunc(`/update/{metric_type}/{metric_name}/{metric_value}`, handler.UpdateMetric)
 
-	fmt.Printf("Server is running on :%s\n", *config.Port)
+	fmt.Printf("Server is running on :%s\n\n\n", *config.Port)
 	if err := http.ListenAndServe(":"+*config.Port, router); err != nil {
 		panic(err)
 	}
