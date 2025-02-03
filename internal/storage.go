@@ -9,8 +9,8 @@ import (
 
 type MetricStorage interface {
 	GetMaxID(metricType string) (int, error)
-	InsertMetric(metricType, name string, value float64, id int) error
-	UpdateMetricByID(metricType string, value float64, id int) error
+	InsertMetric(metricType, name string, value interface{}, id int) error
+	UpdateMetricByID(metricType string, value interface{}, id int) error
 	GetMetricIDByName(metricType, name string) (int, error)
 }
 
@@ -43,7 +43,7 @@ func (s *SQLMetricStorage) GetMaxID(metricType string) (int, error) {
 	return maxID, nil
 }
 
-func (s *SQLMetricStorage) InsertMetric(metricType, name string, value float64, id int) error {
+func (s *SQLMetricStorage) InsertMetric(metricType, name string, value interface{}, id int) error {
 	query := fmt.Sprintf("INSERT INTO %s VALUES ($1, $2, $3)", TableNames[metricType])
 	_, err := s.DB.Exec(query, id+1, name, value)
 	if err != nil {
@@ -52,7 +52,7 @@ func (s *SQLMetricStorage) InsertMetric(metricType, name string, value float64, 
 	return nil
 }
 
-func (s *SQLMetricStorage) UpdateMetricByID(metricType string, value float64, id int) error {
+func (s *SQLMetricStorage) UpdateMetricByID(metricType string, value interface{}, id int) error {
 	query := fmt.Sprintf("UPDATE %s SET value = $1 WHERE id = $2", TableNames[metricType])
 	_, err := s.DB.Exec(query, value, id)
 	return err

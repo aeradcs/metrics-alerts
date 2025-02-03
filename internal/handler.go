@@ -32,10 +32,22 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, fmt.Sprintf("Metric type is invalid, possible types are: %s, provided type is: %s", GetAllMetricTypesStr(), metricType), http.StatusBadRequest)
 		return
 	}
-	convertedMetricValue, err := strconv.ParseFloat(metricValue, 64)
-	if err != nil {
-		http.Error(w, "Metric value is not a valid float", http.StatusBadRequest)
-		return
+	var convertedMetricValue interface{}
+	var err error
+	if metricType == Gauge {
+		convertedMetricValue, err = strconv.ParseFloat(metricValue, 64)
+		if err != nil {
+			http.Error(w, "Metric value is not a valid float", http.StatusBadRequest)
+			return
+		}
+	} else if metricType == Counter {
+		convertedMetricValue, err = strconv.Atoi(metricValue)
+		if err != nil {
+			http.Error(w, "Metric value is not a valid int", http.StatusBadRequest)
+			return
+		}
+	} else {
+		convertedMetricValue, err = 0, nil
 	}
 
 	if metricType == Gauge {
@@ -55,7 +67,7 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *Handler) addValue(metricType, name string, value float64) error {
+func (h *Handler) addValue(metricType, name string, value interface{}) error {
 	maxID, err := h.Storage.GetMaxID(metricType)
 	if err != nil {
 		return err
@@ -69,7 +81,7 @@ func (h *Handler) addValue(metricType, name string, value float64) error {
 	return nil
 }
 
-func (h *Handler) replaceValue(metricType, name string, value float64) error {
+func (h *Handler) replaceValue(metricType, name string, value interface{}) error {
 	maxID, err := h.Storage.GetMaxID(metricType)
 	if err != nil {
 		return err
