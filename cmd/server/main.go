@@ -6,15 +6,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"metrics-alerts/config"
-	"metrics-alerts/internal"
+	"metrics-alerts/config/server"
+	server2 "metrics-alerts/internal/server"
 	"net/http"
 )
 
 func main() {
 	// args
 	flag.Parse()
-	fmt.Printf("Parsed args : a = %s\n", *config.Port)
+	fmt.Printf("Parsed args : a = %s\n", *server.Port)
 
 	// env
 	err := godotenv.Load(".env")
@@ -23,14 +23,14 @@ func main() {
 	}
 
 	// db & server
-	db := internal.NewSQLMetricStorage()
+	db := server2.NewSQLMetricStorage()
 	defer db.Close()
-	handler := internal.Handler{Storage: db}
+	handler := server2.Handler{Storage: db}
 	router := mux.NewRouter()
 	router.HandleFunc(`/update/{metric_type}/{metric_name}/{metric_value}`, handler.UpdateMetric)
 
-	fmt.Printf("Server is running on :%s\n\n\n", *config.Port)
-	if err := http.ListenAndServe(":"+*config.Port, router); err != nil {
+	fmt.Printf("Server is running on :%s\n\n\n", *server.Port)
+	if err := http.ListenAndServe(":"+*server.Port, router); err != nil {
 		panic(err)
 	}
 }

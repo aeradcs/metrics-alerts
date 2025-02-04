@@ -1,4 +1,4 @@
-package internal
+package server
 
 import (
 	"database/sql"
@@ -19,7 +19,7 @@ type SQLMetricStorage struct {
 }
 
 func NewSQLMetricStorage() *SQLMetricStorage {
-	connStr := os.Getenv("DB_CONN_STR")
+	connStr := os.Getenv("DB_SERVER_CONN_STR")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
