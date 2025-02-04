@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"io"
+	"metrics-alerts/internal/common"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,9 +18,9 @@ var MaxIDCounter = 0
 type mockDB struct{}
 
 func (m *mockDB) GetMaxID(metricType string) (int, error) {
-	if metricType == Gauge {
+	if metricType == common.Gauge {
 		return MaxIDGauge, nil
-	} else if metricType == Counter {
+	} else if metricType == common.Counter {
 		return MaxIDCounter, nil
 	}
 	return 0, nil
@@ -34,9 +35,9 @@ func (m *mockDB) UpdateMetricByID(metricType string, value interface{}, id int) 
 }
 
 func (m *mockDB) GetMetricIDByName(metricType, name string) (int, error) {
-	if metricType == Gauge {
+	if metricType == common.Gauge {
 		return MaxIDGauge, nil
-	} else if metricType == Counter {
+	} else if metricType == common.Counter {
 		return MaxIDCounter, nil
 	}
 	return 0, nil
@@ -65,7 +66,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusOK,
 			responseBody: "Successfully updated metric first",
 			createdObj:   true,
-			metricType:   Gauge,
+			metricType:   common.Gauge,
 		},
 		{
 			name:         "Update Gauge Success",
@@ -77,7 +78,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusOK,
 			responseBody: "Successfully updated metric first",
 			createdObj:   false,
-			metricType:   Gauge,
+			metricType:   common.Gauge,
 		},
 		{
 			name:         "Update Gauge Error Value Is Not Float",
@@ -89,7 +90,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusBadRequest,
 			responseBody: "Metric value is not a valid float\n",
 			createdObj:   false,
-			metricType:   Gauge,
+			metricType:   common.Gauge,
 		},
 		{
 			name:         "Update Gauge Error Wrong Method",
@@ -101,7 +102,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusMethodNotAllowed,
 			responseBody: "Only POST requests are allowed!\n",
 			createdObj:   false,
-			metricType:   Gauge,
+			metricType:   common.Gauge,
 		},
 		{
 			name:         "Update Gauge Error Wrong Metric Type",
@@ -111,9 +112,9 @@ func TestShortenUrlAPI(t *testing.T) {
 			url:          "/wrong/first/h",
 			body:         "",
 			responseCode: http.StatusBadRequest,
-			responseBody: fmt.Sprintf("Metric type is invalid, possible types are: %s, provided type is: wrong\n", GetAllMetricTypesStr()),
+			responseBody: fmt.Sprintf("Metric type is invalid, possible types are: %s, provided type is: wrong\n", common.GetAllMetricTypesStr()),
 			createdObj:   false,
-			metricType:   Gauge,
+			metricType:   common.Gauge,
 		},
 		// -------------------------------------------------------------
 		{
@@ -126,7 +127,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusOK,
 			responseBody: "Successfully inserted metric first",
 			createdObj:   true,
-			metricType:   Counter,
+			metricType:   common.Counter,
 		},
 		{
 			name:         "Create Counter Success 1",
@@ -138,7 +139,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusOK,
 			responseBody: "Successfully inserted metric first",
 			createdObj:   true,
-			metricType:   Counter,
+			metricType:   common.Counter,
 		},
 		{
 			name:         "Update Counter Error Value Is Not Int",
@@ -150,7 +151,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusBadRequest,
 			responseBody: "Metric value is not a valid int\n",
 			createdObj:   false,
-			metricType:   Counter,
+			metricType:   common.Counter,
 		},
 		{
 			name:         "Update Counter Error Value Is Not Int 1",
@@ -162,7 +163,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusBadRequest,
 			responseBody: "Metric value is not a valid int\n",
 			createdObj:   false,
-			metricType:   Counter,
+			metricType:   common.Counter,
 		},
 		{
 			name:         "Update Counter Error Wrong Method",
@@ -174,7 +175,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			responseCode: http.StatusMethodNotAllowed,
 			responseBody: "Only POST requests are allowed!\n",
 			createdObj:   false,
-			metricType:   Counter,
+			metricType:   common.Counter,
 		},
 	}
 	for _, test := range tests {
@@ -196,10 +197,10 @@ func TestShortenUrlAPI(t *testing.T) {
 			}
 			assert.Equal(t, resp.StatusCode, test.responseCode)
 			assert.Equal(t, string(body), test.responseBody)
-			if test.metricType == Gauge && test.createdObj {
+			if test.metricType == common.Gauge && test.createdObj {
 				MaxIDGauge += 1
 			}
-			if test.metricType == Counter && test.createdObj {
+			if test.metricType == common.Counter && test.createdObj {
 				MaxIDCounter += 1
 			}
 		})

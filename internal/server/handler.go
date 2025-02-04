@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	"metrics-alerts/internal/common"
 	"net/http"
 	"strconv"
 )
@@ -28,19 +29,19 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Metric type, name and value are required", http.StatusBadRequest)
 		return
 	}
-	if !IsValidMetricType(metricType) {
-		http.Error(w, fmt.Sprintf("Metric type is invalid, possible types are: %s, provided type is: %s", GetAllMetricTypesStr(), metricType), http.StatusBadRequest)
+	if !common.IsValidMetricType(metricType) {
+		http.Error(w, fmt.Sprintf("Metric type is invalid, possible types are: %s, provided type is: %s", common.GetAllMetricTypesStr(), metricType), http.StatusBadRequest)
 		return
 	}
 	var convertedMetricValue interface{}
 	var err error
-	if metricType == Gauge {
+	if metricType == common.Gauge {
 		convertedMetricValue, err = strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			http.Error(w, "Metric value is not a valid float", http.StatusBadRequest)
 			return
 		}
-	} else if metricType == Counter {
+	} else if metricType == common.Counter {
 		convertedMetricValue, err = strconv.Atoi(metricValue)
 		if err != nil {
 			http.Error(w, "Metric value is not a valid int", http.StatusBadRequest)
@@ -50,14 +51,14 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
 		convertedMetricValue, err = 0, nil
 	}
 
-	if metricType == Gauge {
+	if metricType == common.Gauge {
 		err := h.replaceValue(metricType, metricName, convertedMetricValue)
 		if err != nil {
 			http.Error(w, "Error occurred during updating metric "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Write([]byte("Successfully updated metric " + metricName))
-	} else if metricType == Counter {
+	} else if metricType == common.Counter {
 		err := h.addValue(metricType, metricName, convertedMetricValue)
 		if err != nil {
 			http.Error(w, "Error occurred during inserting metric "+err.Error(), http.StatusInternalServerError)

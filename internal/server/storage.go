@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"metrics-alerts/internal/common"
 	"os"
 )
 
@@ -34,7 +35,7 @@ func (s *SQLMetricStorage) Close() {
 }
 
 func (s *SQLMetricStorage) GetMaxID(metricType string) (int, error) {
-	query := fmt.Sprintf("SELECT coalesce(max(id), 0) FROM %s", TableNames[metricType])
+	query := fmt.Sprintf("SELECT coalesce(max(id), 0) FROM %s", common.TableNames[metricType])
 	var maxID int
 	err := s.DB.QueryRow(query).Scan(&maxID)
 	if err != nil {
@@ -44,7 +45,7 @@ func (s *SQLMetricStorage) GetMaxID(metricType string) (int, error) {
 }
 
 func (s *SQLMetricStorage) InsertMetric(metricType, name string, value interface{}, id int) error {
-	query := fmt.Sprintf("INSERT INTO %s VALUES ($1, $2, $3)", TableNames[metricType])
+	query := fmt.Sprintf("INSERT INTO %s VALUES ($1, $2, $3)", common.TableNames[metricType])
 	_, err := s.DB.Exec(query, id+1, name, value)
 	if err != nil {
 		return err
@@ -53,13 +54,13 @@ func (s *SQLMetricStorage) InsertMetric(metricType, name string, value interface
 }
 
 func (s *SQLMetricStorage) UpdateMetricByID(metricType string, value interface{}, id int) error {
-	query := fmt.Sprintf("UPDATE %s SET value = $1 WHERE id = $2", TableNames[metricType])
+	query := fmt.Sprintf("UPDATE %s SET value = $1 WHERE id = $2", common.TableNames[metricType])
 	_, err := s.DB.Exec(query, value, id)
 	return err
 }
 
 func (s *SQLMetricStorage) GetMetricIDByName(metricType, name string) (int, error) {
-	query := fmt.Sprintf("SELECT id FROM %s WHERE name = $1", TableNames[metricType])
+	query := fmt.Sprintf("SELECT id FROM %s WHERE name = $1", common.TableNames[metricType])
 	var id int
 	err := s.DB.QueryRow(query, name).Scan(&id)
 	if err == sql.ErrNoRows {
