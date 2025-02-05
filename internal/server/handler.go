@@ -13,6 +13,7 @@ type Handler struct {
 }
 
 func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
+	fmt.Printf("Received request : %s %s\n", req.Method, req.URL)
 	if req.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
 		return
@@ -52,12 +53,17 @@ func (h *Handler) UpdateMetric(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if metricType == common.Gauge {
-		err := h.replaceValue(metricType, metricName, convertedMetricValue)
+		created, err := h.replaceValue(metricType, metricName, convertedMetricValue)
 		if err != nil {
 			http.Error(w, "Error occurred during updating metric "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write([]byte("Successfully updated metric " + metricName))
+		if created {
+			w.Write([]byte("Successfully inserted metric " + metricName))
+		} else {
+			w.Write([]byte("Successfully updated metric " + metricName))
+		}
+
 	} else if metricType == common.Counter {
 		err := h.addValue(metricType, metricName, convertedMetricValue)
 		if err != nil {
@@ -82,20 +88,20 @@ func (h *Handler) addValue(metricType, name string, value interface{}) error {
 	return nil
 }
 
-func (h *Handler) replaceValue(metricType, name string, value interface{}) error {
+func (h *Handler) replaceValue(metricType, name string, value interface{}) (bool, error) {
 	maxID, err := h.Storage.GetMaxID(metricType)
 	if err != nil {
-		return err
+		return false, err
 	}
-
 	existingMetricID, err := h.Storage.GetMetricIDByName(metricType, name)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if existingMetricID == 0 {
 		h.Storage.InsertMetric(metricType, name, value, maxID+1)
+		return true, nil
 	} else {
-		h.Storage.UpdateMetricByID(metricType, value, maxID)
+		h.Storage.UpdateMetricByID(metricType, value, existingMetricID)
+		return false, nil
 	}
-	return nil
 }

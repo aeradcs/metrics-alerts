@@ -64,7 +64,7 @@ func TestShortenUrlAPI(t *testing.T) {
 			url:          "/gauge/first/666.66",
 			body:         "",
 			responseCode: http.StatusOK,
-			responseBody: "Successfully updated metric first",
+			responseBody: "Successfully inserted metric first",
 			createdObj:   true,
 			metricType:   common.Gauge,
 		},

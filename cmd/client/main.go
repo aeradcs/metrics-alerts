@@ -1,31 +1,29 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-	"metrics-alerts/config/client"
+	clientrequests "metrics-alerts/internal/client"
 	"metrics-alerts/internal/common"
 	"net/http"
+	"reflect"
+	"runtime"
 )
 
 func main() {
 	var metricType = common.Gauge
-	var metricName = "abc"
-	var metricValue = 10
-
 	httpClient := &http.Client{}
-	url := fmt.Sprintf("%s/update/%s/%s/%d", client.BaseUrl, metricType, metricName, metricValue)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(nil))
-	if err != nil {
-		fmt.Printf("Error while creating request: %v\n", err)
+
+	memStats := runtime.MemStats{}
+	runtime.ReadMemStats(&memStats)
+
+	v := reflect.ValueOf(memStats)
+	t := reflect.TypeOf(memStats)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if common.MemStatsFields[field.Name] {
+			fmt.Printf("Field %s -- Value %v\n", field.Name, v.Field(i).Interface())
+			_, _ = clientrequests.SendUpdateRequest(httpClient, metricType, field.Name, v.Field(i).Interface())
+		}
 	}
-	fmt.Printf("Sending request to the server: %v\n", req)
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		fmt.Printf("Error while sending request: %v -- %v\n", req, err)
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	fmt.Printf("Got response from the server: %s\n", string(body))
+
 }
