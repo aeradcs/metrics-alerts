@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"math/rand"
 	clientrequests "metrics-alerts/internal/client"
 	"metrics-alerts/internal/common"
 	"net/http"
@@ -10,19 +10,21 @@ import (
 )
 
 func main() {
-	var metricType = common.Gauge
 	httpClient := &http.Client{}
 
-	memStats := runtime.MemStats{}
-	runtime.ReadMemStats(&memStats)
+	memStats := clientrequests.ExtendedMemStats{}
+	runtime.ReadMemStats(&memStats.MemStats)
+	v := reflect.ValueOf(memStats.MemStats)
+	t := reflect.TypeOf(memStats.MemStats)
 
-	v := reflect.ValueOf(memStats)
-	t := reflect.TypeOf(memStats)
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if common.MemStatsFields[field.Name] {
-			fmt.Printf("Field %s -- Value %v\n", field.Name, v.Field(i).Interface())
-			_, _ = clientrequests.SendUpdateRequest(httpClient, metricType, field.Name, v.Field(i).Interface())
+			_, _ = clientrequests.SendUpdateRequest(httpClient, common.Gauge, field.Name, v.Field(i).Interface())
+			memStats.PollCount++
+			_, _ = clientrequests.SendUpdateRequest(httpClient, common.Counter, "PollCount", memStats.PollCount)
+			memStats.RandomValue = rand.Float64() * float64(rand.Int31n(1000))
+			_, _ = clientrequests.SendUpdateRequest(httpClient, common.Gauge, "RandomValue", memStats.RandomValue)
 		}
 	}
 
