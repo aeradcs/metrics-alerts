@@ -16,13 +16,13 @@ func main() {
 	httpClient := &http.Client{}
 	memStats := clientrequests.ExtendedMemStats{}
 
-	go gatherStats(memStats)
-	go sendStats(memStats, httpClient)
+	go gatherStats(&memStats)
+	go sendStats(&memStats, httpClient)
 
 	select {}
 }
 
-func sendStats(memStats clientrequests.ExtendedMemStats, httpClient *http.Client) {
+func sendStats(memStats *clientrequests.ExtendedMemStats, httpClient *http.Client) {
 	for {
 		v := reflect.ValueOf(memStats.MemStats)
 		t := reflect.TypeOf(memStats.MemStats)
@@ -41,7 +41,7 @@ func sendStats(memStats clientrequests.ExtendedMemStats, httpClient *http.Client
 	}
 }
 
-func gatherStats(memStats clientrequests.ExtendedMemStats) {
+func gatherStats(memStats *clientrequests.ExtendedMemStats) {
 	for {
 		runtime.ReadMemStats(&memStats.MemStats)
 		fmt.Println("\nGathering stats done, going to sleep...\n")
