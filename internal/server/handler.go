@@ -79,12 +79,10 @@ func (h *Handler) addValue(metricType, name string, value interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	err = h.Storage.InsertMetric(metricType, name, value, maxID+1)
+	err = h.Storage.InsertMetric(common.NewMetric(maxID+1, name, metricType, value))
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -93,15 +91,15 @@ func (h *Handler) replaceValue(metricType, name string, value interface{}) (bool
 	if err != nil {
 		return false, err
 	}
-	existingMetricID, _, err := h.Storage.GetMetricIDAndValueByName(metricType, name)
+	existingMetric, err := h.Storage.GetMetric(metricType, name)
 	if err != nil {
 		return false, err
 	}
-	if existingMetricID == 0 {
-		h.Storage.InsertMetric(metricType, name, value, maxID+1)
+	if existingMetric == nil {
+		h.Storage.InsertMetric(common.NewMetric(maxID+1, name, metricType, value))
 		return true, nil
-	} else {
-		h.Storage.UpdateMetricByID(metricType, value, existingMetricID)
-		return false, nil
 	}
+	existingMetric.Value = value
+	h.Storage.UpdateMetric(existingMetric)
+	return false, nil
 }

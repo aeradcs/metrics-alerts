@@ -17,6 +17,39 @@ var MaxIDCounter = 0
 
 type mockDB struct{}
 
+func (m *mockDB) InsertMetric(metric *common.Metric) error {
+	return nil
+}
+
+func (m *mockDB) UpdateMetric(metric *common.Metric) error {
+	return nil
+}
+
+func (m *mockDB) GetMetric(metricType, name string) (*common.Metric, error) {
+	if metricType == common.Gauge {
+		if MaxIDGauge == 0 {
+			return nil, nil
+		}
+		return common.NewMetric(MaxIDGauge, name, metricType, 10), nil
+	} else if metricType == common.Counter {
+		if MaxIDCounter == 0 {
+			return nil, nil
+		}
+		return common.NewMetric(MaxIDCounter, name, metricType, 10), nil
+	}
+	return common.NewMetric(0, name, metricType, 10), nil
+}
+
+func (m *mockDB) GetAllMetrics() ([]*common.Metric, error) {
+	return []*common.Metric{
+		common.NewMetric(1, "a", "counter", 10),
+		common.NewMetric(2, "b", "counter", 20),
+		common.NewMetric(1, "aaa", "gauge", 10),
+		common.NewMetric(2, "aaa", "gauge", 20),
+		common.NewMetric(3, "bbb", "gauge", 30),
+	}, nil
+}
+
 func (m *mockDB) GetMaxID(metricType string) (int, error) {
 	if metricType == common.Gauge {
 		return MaxIDGauge, nil
@@ -24,23 +57,6 @@ func (m *mockDB) GetMaxID(metricType string) (int, error) {
 		return MaxIDCounter, nil
 	}
 	return 0, nil
-}
-
-func (m *mockDB) InsertMetric(metricType, name string, value interface{}, id int) error {
-	return nil
-}
-
-func (m *mockDB) UpdateMetricByID(metricType string, value interface{}, id int) error {
-	return nil
-}
-
-func (m *mockDB) GetMetricIDAndValueByName(metricType, name string) (int, interface{}, error) {
-	if metricType == common.Gauge {
-		return MaxIDGauge, -10.5, nil
-	} else if metricType == common.Counter {
-		return MaxIDCounter, -10, nil
-	}
-	return 0, nil, nil
 }
 
 func TestShortenUrlAPI(t *testing.T) {

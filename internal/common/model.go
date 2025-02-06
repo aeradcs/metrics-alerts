@@ -1,18 +1,51 @@
 package common
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 var Gauge = "gauge"
 var Counter = "counter"
-var MetricTypes = []string{Gauge, Counter}
+
 var TableNames = map[string]string{
 	Gauge:   "gauge",
 	Counter: "counter",
 }
 
+type Metric struct {
+	ID         int
+	Name       string
+	MetricType string
+	Value      interface{}
+}
+
+func NewMetric(id int, name, metricType string, value interface{}) *Metric {
+	if IsValidValue(value) && IsValidMetricType(metricType) {
+		return &Metric{
+			ID:         id,
+			Name:       name,
+			MetricType: metricType,
+			Value:      value,
+		}
+	}
+	return nil
+}
+
+func IsValidValue(input interface{}) bool {
+	switch input.(type) {
+	case int:
+		return true
+	case float64:
+		return true
+	default:
+		return false
+	}
+}
+
 func IsValidMetricType(input string) bool {
-	for _, valid := range MetricTypes {
-		if valid == input {
+	for key := range TableNames {
+		if key == input {
 			return true
 		}
 	}
@@ -20,7 +53,12 @@ func IsValidMetricType(input string) bool {
 }
 
 func GetAllMetricTypesStr() string {
-	return strings.Join(MetricTypes, ", ")
+	keys := make([]string, 0, len(TableNames))
+	for key := range TableNames {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, ", ")
 }
 
 var MemStatsFields = map[string]bool{
