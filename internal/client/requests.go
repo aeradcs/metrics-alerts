@@ -15,10 +15,10 @@ func SendUpdateRequest(httpClient *http.Client, metricType, metricName string, m
 		fmt.Printf("Error while creating request: %v\n", err)
 		return "", err
 	}
-	fmt.Printf("Sending request to the server: %v\n", req)
+	fmt.Printf("Sending request to the server: %v %v\n", req.Method, req.URL)
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		fmt.Printf("Error while sending request: %v -- %v\n", req, err)
+		fmt.Printf("Error while sending request: %v\n", err)
 		return "", err
 	}
 	defer resp.Body.Close()
