@@ -34,13 +34,13 @@ func (m *mockDB) UpdateMetricByID(metricType string, value interface{}, id int) 
 	return nil
 }
 
-func (m *mockDB) GetMetricIDByName(metricType, name string) (int, error) {
+func (m *mockDB) GetMetricIDAndValueByName(metricType, name string) (int, interface{}, error) {
 	if metricType == common.Gauge {
-		return MaxIDGauge, nil
+		return MaxIDGauge, -10.5, nil
 	} else if metricType == common.Counter {
-		return MaxIDCounter, nil
+		return MaxIDCounter, -10, nil
 	}
-	return 0, nil
+	return 0, nil, nil
 }
 
 func TestShortenUrlAPI(t *testing.T) {

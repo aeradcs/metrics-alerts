@@ -12,7 +12,7 @@ type MetricStorage interface {
 	GetMaxID(metricType string) (int, error)
 	InsertMetric(metricType, name string, value interface{}, id int) error
 	UpdateMetricByID(metricType string, value interface{}, id int) error
-	GetMetricIDByName(metricType, name string) (int, error)
+	GetMetricIDAndValueByName(metricType, name string) (int, interface{}, error)
 }
 
 type SQLMetricStorage struct {
@@ -59,12 +59,13 @@ func (s *SQLMetricStorage) UpdateMetricByID(metricType string, value interface{}
 	return err
 }
 
-func (s *SQLMetricStorage) GetMetricIDByName(metricType, name string) (int, error) {
-	query := fmt.Sprintf("SELECT id FROM %s WHERE name = $1", common.TableNames[metricType])
+func (s *SQLMetricStorage) GetMetricIDAndValueByName(metricType, name string) (int, interface{}, error) {
+	query := fmt.Sprintf("SELECT id, value FROM %s WHERE name = $1", common.TableNames[metricType])
 	var id int
-	err := s.DB.QueryRow(query, name).Scan(&id)
+	var value interface{}
+	err := s.DB.QueryRow(query, name).Scan(&id, &value)
 	if err == sql.ErrNoRows {
-		return 0, nil
+		return 0, nil, nil
 	}
-	return id, err
+	return id, value, err
 }

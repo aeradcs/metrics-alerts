@@ -93,7 +93,7 @@ func (h *Handler) replaceValue(metricType, name string, value interface{}) (bool
 	if err != nil {
 		return false, err
 	}
-	existingMetricID, err := h.Storage.GetMetricIDByName(metricType, name)
+	existingMetricID, _, err := h.Storage.GetMetricIDAndValueByName(metricType, name)
 	if err != nil {
 		return false, err
 	}
