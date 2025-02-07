@@ -120,3 +120,32 @@ func (h *Handler) GetAllMetrics(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(fmt.Sprintf("Metric of type %s: %s = %v\n", m.MetricType, m.Name, m.Value)))
 	}
 }
+
+func (h *Handler) GetMetric(w http.ResponseWriter, req *http.Request) {
+	fmt.Printf("Received request : %s %s\n", req.Method, req.URL)
+	if req.Method != http.MethodGet {
+		http.Error(w, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
+		return
+
+	}
+	metricType := mux.Vars(req)["metric_type"]
+	metricName := mux.Vars(req)["metric_name"]
+	if metricType == "" || metricName == "" {
+		http.Error(w, "Metric type and name are required", http.StatusBadRequest)
+		return
+	}
+	if !common.IsValidMetricType(metricType) {
+		http.Error(w, fmt.Sprintf("Metric type is invalid, possible types are: %s, provided type is: %s", common.GetAllMetricTypesStr(), metricType), http.StatusBadRequest)
+		return
+	}
+	existingMetric, err := h.Storage.GetMetric(metricType, metricName)
+	if existingMetric == nil {
+		http.Error(w, fmt.Sprintf("Metric %s of type %s not found", metricName, metricType), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error occurred during retrieving metric: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte(fmt.Sprintf("Metric %s value is %v\n", existingMetric.Name, existingMetric.Value)))
+}

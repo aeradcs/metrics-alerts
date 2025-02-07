@@ -28,6 +28,7 @@ func main() {
 	handler := server2.Handler{Storage: db}
 	router := mux.NewRouter()
 	router.HandleFunc(`/update/{metric_type}/{metric_name}/{metric_value}`, handler.UpdateMetric)
+	router.HandleFunc(`/value/{metric_type}/{metric_name}`, handler.GetMetric)
 	router.HandleFunc(`/`, handler.GetAllMetrics)
 
 	fmt.Printf("Server is running on :%s\n\n\n", *server.Port)

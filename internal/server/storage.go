@@ -62,7 +62,7 @@ func (s *SQLMetricStorage) UpdateMetric(metric *common.Metric) error {
 }
 
 func (s *SQLMetricStorage) GetMetric(metricType, name string) (*common.Metric, error) {
-	query := fmt.Sprintf("SELECT id, value FROM %s WHERE name = $1", common.TableNames[metricType])
+	query := fmt.Sprintf("SELECT id, value FROM %s WHERE name = $1 ORDER BY id DESC", common.TableNames[metricType])
 	var id int
 	var value interface{}
 	err := s.DB.QueryRow(query, name).Scan(&id, &value)
