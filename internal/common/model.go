@@ -36,6 +36,8 @@ func IsValidValue(input interface{}) bool {
 	switch input.(type) {
 	case int:
 		return true
+	case int64:
+		return true
 	case float64:
 		return true
 	default:

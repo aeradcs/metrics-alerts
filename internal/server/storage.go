@@ -92,12 +92,7 @@ func (s *SQLMetricStorage) GetAllMetrics() ([]*common.Metric, error) {
 			if err != nil {
 				return nil, err
 			}
-			m := &common.Metric{
-				MetricType: key,
-				ID:         id,
-				Name:       name,
-				Value:      value,
-			}
+			m := common.NewMetric(id, name, key, value)
 			metrics = append(metrics, m)
 		}
 	}
