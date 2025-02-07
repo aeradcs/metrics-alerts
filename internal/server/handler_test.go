@@ -27,12 +27,12 @@ func (m *mockDB) UpdateMetric(metric *common.Metric) error {
 
 func (m *mockDB) GetMetric(metricType, name string) (*common.Metric, error) {
 	if metricType == common.Gauge {
-		if MaxIDGauge == 0 {
+		if MaxIDGauge == 0 || name == "not_exists" {
 			return nil, nil
 		}
-		return common.NewMetric(MaxIDGauge, name, metricType, 10), nil
+		return common.NewMetric(MaxIDGauge, name, metricType, 20), nil
 	} else if metricType == common.Counter {
-		if MaxIDCounter == 0 {
+		if MaxIDCounter == 0 || name == "not_exists" {
 			return nil, nil
 		}
 		return common.NewMetric(MaxIDCounter, name, metricType, 10), nil
@@ -190,6 +190,116 @@ func TestShortenUrlAPI(t *testing.T) {
 			body:         "",
 			responseCode: http.StatusMethodNotAllowed,
 			responseBody: "Only POST requests are allowed!\n",
+			createdObj:   false,
+			metricType:   common.Counter,
+		},
+		// -------------------------------------------------------------
+		{
+			name:         "Get Counter Metric Success",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetMetric },
+			method:       http.MethodGet,
+			urlParam:     "/{metric_type}/{metric_name}",
+			url:          "/counter/first",
+			body:         "",
+			responseCode: http.StatusOK,
+			responseBody: "Metric first value is 10\n",
+			createdObj:   false,
+			metricType:   common.Counter,
+		},
+		{
+			name:         "Get Counter Metric Not Found",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetMetric },
+			method:       http.MethodGet,
+			urlParam:     "/{metric_type}/{metric_name}",
+			url:          "/counter/not_exists",
+			body:         "",
+			responseCode: http.StatusNotFound,
+			responseBody: "Metric not_exists of type counter not found\n",
+			createdObj:   false,
+			metricType:   common.Counter,
+		},
+		{
+			name:         "Get Counter Metric Wrong Type",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetMetric },
+			method:       http.MethodGet,
+			urlParam:     "/{metric_type}/{metric_name}",
+			url:          "/wrong/first",
+			body:         "",
+			responseCode: http.StatusBadRequest,
+			responseBody: "Metric type is invalid, possible types are: counter, gauge, provided type is: wrong\n",
+			createdObj:   false,
+			metricType:   common.Counter,
+		},
+		{
+			name:         "Get Gauge Metric Success",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetMetric },
+			method:       http.MethodGet,
+			urlParam:     "/{metric_type}/{metric_name}",
+			url:          "/gauge/first",
+			body:         "",
+			responseCode: http.StatusOK,
+			responseBody: "Metric first value is 20\n",
+			createdObj:   false,
+			metricType:   common.Gauge,
+		},
+		{
+			name:         "Get Gauge Metric Not Found",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetMetric },
+			method:       http.MethodGet,
+			urlParam:     "/{metric_type}/{metric_name}",
+			url:          "/gauge/not_exists",
+			body:         "",
+			responseCode: http.StatusNotFound,
+			responseBody: "Metric not_exists of type gauge not found\n",
+			createdObj:   false,
+			metricType:   common.Gauge,
+		},
+		{
+			name:         "Get Gauge Metric Wrong Type",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetMetric },
+			method:       http.MethodGet,
+			urlParam:     "/{metric_type}/{metric_name}",
+			url:          "/wrong/first",
+			body:         "",
+			responseCode: http.StatusBadRequest,
+			responseBody: "Metric type is invalid, possible types are: counter, gauge, provided type is: wrong\n",
+			createdObj:   false,
+			metricType:   common.Gauge,
+		},
+		{
+			name:         "Get Gauge Metric Wrong Method",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetMetric },
+			method:       http.MethodPut,
+			urlParam:     "/{metric_type}/{metric_name}",
+			url:          "/wrong/first",
+			body:         "",
+			responseCode: http.StatusMethodNotAllowed,
+			responseBody: "Only GET requests are allowed!\n",
+			createdObj:   false,
+			metricType:   common.Gauge,
+		},
+		// -------------------------------------------------------------
+		{
+			name:         "Get All Success",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetAllMetrics },
+			method:       http.MethodGet,
+			urlParam:     "/",
+			url:          "/",
+			body:         "",
+			responseCode: http.StatusOK,
+			responseBody: "Metric of type counter: a = 10\nMetric of type counter: b = 20\nMetric of type gauge: aaa = 10\nMetric of type gauge: aaa = 20\nMetric of type gauge: bbb = 30\n",
+			createdObj:   false,
+			metricType:   common.Counter,
+		},
+		{
+			name:         "Get All Wrong Method",
+			handlerFunc:  func(h *Handler) http.HandlerFunc { return h.GetAllMetrics },
+			method:       http.MethodPut,
+			urlParam:     "/",
+			url:          "/",
+			body:         "",
+			responseCode: http.StatusMethodNotAllowed,
+			responseBody: "Only GET requests are allowed!\n",
 			createdObj:   false,
 			metricType:   common.Counter,
 		},
