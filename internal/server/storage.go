@@ -7,7 +7,6 @@ import (
 	"log"
 	"metrics-alerts/internal/common"
 	"os"
-	"strings"
 )
 
 type MetricStorage interface {
@@ -77,24 +76,30 @@ func (s *SQLMetricStorage) GetMetric(metricType, name string) (*common.Metric, e
 }
 
 func (s *SQLMetricStorage) GetAllMetrics() ([]*common.Metric, error) {
-	keys := make([]string, 0, len(common.TableNames))
-	for key := range common.TableNames {
-		keys = append(keys, fmt.Sprintf("(SELECT * FROM %s ORDER BY id)", key))
-	}
-	query := strings.Join(keys, " UNION ALL ")
-	rows, err := s.DB.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var metrics []*common.Metric
-	for rows.Next() {
-		var m common.Metric
-		if err := rows.Scan(&m.ID, &m.Name, &m.MetricType, &m.Value); err != nil {
+	for key := range common.TableNames {
+		query := fmt.Sprintf("SELECT * FROM %s", common.TableNames[key])
+		rows, err := s.DB.Query(query)
+		if err != nil {
 			return nil, err
 		}
-		metrics = append(metrics, &m)
+		defer rows.Close()
+		for rows.Next() {
+			var id int
+			var name string
+			var value interface{}
+			err := rows.Scan(&id, &name, &value)
+			if err != nil {
+				return nil, err
+			}
+			m := &common.Metric{
+				MetricType: key,
+				ID:         id,
+				Name:       name,
+				Value:      value,
+			}
+			metrics = append(metrics, m)
+		}
 	}
 	return metrics, nil
 }

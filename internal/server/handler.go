@@ -103,3 +103,20 @@ func (h *Handler) replaceValue(metricType, name string, value interface{}) (bool
 	h.Storage.UpdateMetric(existingMetric)
 	return false, nil
 }
+
+func (h *Handler) GetAllMetrics(w http.ResponseWriter, req *http.Request) {
+	fmt.Printf("Received request : %s %s\n", req.Method, req.URL)
+	if req.Method != http.MethodGet {
+		http.Error(w, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
+		return
+
+	}
+	metrics, err := h.Storage.GetAllMetrics()
+	if err != nil {
+		http.Error(w, "Error occurred during retrieving metrics "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	for _, m := range metrics {
+		w.Write([]byte(fmt.Sprintf("Metric of type %s: %s = %v\n", m.MetricType, m.Name, m.Value)))
+	}
+}
