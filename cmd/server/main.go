@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"metrics-alerts/config/server"
-	server2 "metrics-alerts/internal/server"
+	server_service "metrics-alerts/internal/server"
 	"net/http"
 )
 
@@ -23,9 +23,9 @@ func main() {
 	}
 
 	// db & server
-	db := server2.NewSQLMetricStorage()
+	db := server_service.NewSQLMetricStorage()
 	defer db.Close()
-	handler := server2.Handler{Storage: db}
+	handler := server_service.Handler{Storage: db}
 	router := mux.NewRouter()
 	router.HandleFunc(`/update/{metric_type}/{metric_name}/{metric_value}`, handler.UpdateMetric)
 	router.HandleFunc(`/value/{metric_type}/{metric_name}`, handler.GetMetric)

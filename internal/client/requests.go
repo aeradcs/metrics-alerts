@@ -9,7 +9,7 @@ import (
 )
 
 func SendUpdateRequest(httpClient *http.Client, metricType, metricName string, metricValue interface{}) (string, error) {
-	url := fmt.Sprintf("%s/update/%s/%s/%v", client.BaseUrl, metricType, metricName, metricValue)
+	url := fmt.Sprintf("%s:%s/update/%s/%s/%v", client.BaseUrl, *client.Port, metricType, metricName, metricValue)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(nil))
 	if err != nil {
 		fmt.Printf("Error while creating request: %v\n", err)

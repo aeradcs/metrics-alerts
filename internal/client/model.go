@@ -3,7 +3,6 @@ package client
 import (
 	"fmt"
 	"math/rand"
-	"metrics-alerts/config/client"
 	"metrics-alerts/internal/common"
 	"net/http"
 	"reflect"
@@ -17,7 +16,7 @@ type ExtendedMemStats struct {
 	RandomValue float64
 }
 
-func SendStats(memStats *ExtendedMemStats, httpClient *http.Client) {
+func SendStats(memStats *ExtendedMemStats, httpClient *http.Client, duration int64) {
 	for {
 		v := reflect.ValueOf(memStats.MemStats)
 		t := reflect.TypeOf(memStats.MemStats)
@@ -32,14 +31,14 @@ func SendStats(memStats *ExtendedMemStats, httpClient *http.Client) {
 			}
 		}
 		fmt.Println("\nSending stats done, going to sleep...\n")
-		time.Sleep(time.Duration(client.ReportInterval) * time.Second)
+		time.Sleep(time.Duration(duration) * time.Second)
 	}
 }
 
-func GatherStats(memStats *ExtendedMemStats) {
+func GatherStats(memStats *ExtendedMemStats, duration int64) {
 	for {
 		runtime.ReadMemStats(&memStats.MemStats)
 		fmt.Println("\nGathering stats done, going to sleep...\n")
-		time.Sleep(time.Duration(client.PollInterval) * time.Second)
+		time.Sleep(time.Duration(duration) * time.Second)
 	}
 }
